@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "asheskingdoms",
+	"version": "${version}",
+	"name": "Ashes Kingdoms",
+	"description": "Forge your dynasty and shape your land.",
+	"authors": ["Me!"],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/asheskingdoms/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.odaishi.asheskingdoms.AshesKingdoms"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.17.2",
+		"fabric": "*",
+		"minecraft": "1.21.1",
+		"numismatic-overhaul": ">=0.3.4+1.21"
+	}
+}
