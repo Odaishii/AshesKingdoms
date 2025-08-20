@@ -83,8 +83,12 @@ public class KingdomWarManager {
         }
         War w = new War(attacker, defender);
         wars.put(w.id, w);
-        // Trigger a save so wars persist (KingdomManager.save() will include wars).
-        KingdomManager.saveData(); // <-- KingdomManager must expose saveData() (see below patch)
+        // Trigger a save so wars persist
+        try {
+            KingdomManager.saveToFile();
+        } catch (Exception e) {
+            System.err.println("Failed to save war data: " + e.getMessage());
+        }
         return w;
     }
 
@@ -92,13 +96,21 @@ public class KingdomWarManager {
         War w = wars.get(warId);
         if (w != null) {
             w.active = false;
-            KingdomManager.saveData();
+            try {
+                KingdomManager.saveToFile();
+            } catch (Exception e) {
+                System.err.println("Failed to save war data: " + e.getMessage());
+            }
         }
     }
 
     public static void removeWar(UUID warId) {
         if (wars.remove(warId) != null) {
-            KingdomManager.saveData();
+            try {
+                KingdomManager.saveToFile();
+            } catch (Exception e) {
+                System.err.println("Failed to save war data: " + e.getMessage());
+            }
         }
     }
 

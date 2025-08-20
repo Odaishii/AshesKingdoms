@@ -4,7 +4,7 @@ import com.odaishi.asheskingdoms.commands.KingdomClaimCommand;
 import com.odaishi.asheskingdoms.commands.KingdomCommand;
 import com.odaishi.asheskingdoms.commands.KingdomMemberCommand;
 import com.odaishi.asheskingdoms.noapi.NoApi;
-import com.odaishi.asheskingdoms.noapi.ReflectionNoApiImpl;
+import com.odaishi.asheskingdoms.noapi.NORuntimeAdapter;
 import com.odaishi.asheskingdoms.kingdoms.KingdomManager;
 
 import net.fabricmc.api.ModInitializer;
@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.WorldSavePath;
-import com.odaishi.asheskingdoms.kingdoms.*;
 import com.odaishi.asheskingdoms.commands.KingdomWarCommand;
 
 import java.io.File;
@@ -21,7 +20,6 @@ import java.util.UUID;
 public class AshesKingdoms implements ModInitializer {
 
 	public static NoApi noApi;
-
 	public static final String MOD_ID = "asheskingdoms";
 	private static AshesKingdoms INSTANCE;
 	private MinecraftServer server;
@@ -30,6 +28,7 @@ public class AshesKingdoms implements ModInitializer {
 		return INSTANCE;
 	}
 
+	// Remove the NoApi initialization completely:
 	@Override
 	public void onInitialize() {
 		INSTANCE = this;
@@ -45,6 +44,7 @@ public class AshesKingdoms implements ModInitializer {
 		// Server lifecycle hooks
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			this.server = server;
+			KingdomManager.setServer(server);
 			loadData();
 		});
 
@@ -52,29 +52,7 @@ public class AshesKingdoms implements ModInitializer {
 			saveData();
 		});
 
-		// Initialize NoApi
-		try {
-			noApi = new ReflectionNoApiImpl() {
-				@Override
-				public boolean tryAdd(UUID player, long amount) {
-					return false;
-				}
-
-				@Override
-				public boolean tryRemove(UUID player, long amount) {
-					return false;
-				}
-
-				@Override
-				public long getBalance(UUID player) {
-					return 0;
-				}
-			};
-		} catch (Exception e) {
-			noApi = null;
-			System.out.println("[AshesKingdoms] Numismatic Overhaul not detected. NoApi disabled.");
-		}
-
+		System.out.println("[AshesKingdoms] Using item-based economy system.");
 		System.out.println("[AshesKingdoms] Mod initialized successfully.");
 	}
 
@@ -82,10 +60,10 @@ public class AshesKingdoms implements ModInitializer {
 	public void saveData() {
 		if (server != null) {
 			try {
-				File saveFile = new File(server.getSavePath(WorldSavePath.ROOT).toFile(), "kingdoms.json");
-				KingdomManager.saveToFile(saveFile);
+				KingdomManager.saveToFile();
 				System.out.println("[AshesKingdoms] Kingdom data saved.");
 			} catch (Exception e) {
+				System.err.println("[AshesKingdoms] Failed to save kingdom data: " + e.getMessage());
 				e.printStackTrace();
 			}
 		}
@@ -95,12 +73,10 @@ public class AshesKingdoms implements ModInitializer {
 	public void loadData() {
 		if (server != null) {
 			try {
-				File saveFile = new File(server.getSavePath(WorldSavePath.ROOT).toFile(), "kingdoms.json");
-				if (saveFile.exists()) {
-					KingdomManager.loadFromFile(saveFile);
-					System.out.println("[AshesKingdoms] Kingdom data loaded.");
-				}
+				KingdomManager.loadFromFile();
+				System.out.println("[AshesKingdoms] Kingdom data loaded.");
 			} catch (Exception e) {
+				System.err.println("[AshesKingdoms] Failed to load kingdom data: " + e.getMessage());
 				e.printStackTrace();
 			}
 		}

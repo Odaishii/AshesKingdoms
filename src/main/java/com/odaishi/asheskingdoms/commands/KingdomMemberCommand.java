@@ -1,7 +1,7 @@
 package com.odaishi.asheskingdoms.commands;
 
+import com.odaishi.asheskingdoms.kingdoms.Kingdom;
 import com.odaishi.asheskingdoms.kingdoms.KingdomManager;
-import com.odaishi.asheskingdoms.kingdoms.KingdomManager.Kingdom;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -30,7 +30,7 @@ public class KingdomMemberCommand {
                                                         return 0;
                                                     }
 
-                                                    if (!executor.getUuid().equals(kingdom.owner)) {
+                                                    if (!executor.getUuid().equals(kingdom.getOwner())) {
                                                         executor.sendMessage(Text.of("Only the kingdom owner can add members."), false);
                                                         return 0;
                                                     }
@@ -43,7 +43,7 @@ public class KingdomMemberCommand {
 
                                                     kingdom.addMember(target.getUuid(), rank);
                                                     executor.sendMessage(Text.of(target.getName().getString() + " has been added as " + rank), false);
-                                                    target.sendMessage(Text.of("You have been added to the kingdom " + kingdom.name + " as " + rank), false);
+                                                    target.sendMessage(Text.of("You have been added to the kingdom " + kingdom.getName() + " as " + rank), false);
 
                                                     return 1;
                                                 })
@@ -62,7 +62,7 @@ public class KingdomMemberCommand {
                                                 return 0;
                                             }
 
-                                            if (!executor.getUuid().equals(kingdom.owner)) {
+                                            if (!executor.getUuid().equals(kingdom.getOwner())) {
                                                 executor.sendMessage(Text.of("Only the kingdom owner can remove members."), false);
                                                 return 0;
                                             }
@@ -75,7 +75,7 @@ public class KingdomMemberCommand {
 
                                             kingdom.removeMember(target.getUuid());
                                             executor.sendMessage(Text.of(target.getName().getString() + " has been removed from the kingdom."), false);
-                                            target.sendMessage(Text.of("You have been removed from the kingdom " + kingdom.name), false);
+                                            target.sendMessage(Text.of("You have been removed from the kingdom " + kingdom.getName()), false);
 
                                             return 1;
                                         })
@@ -90,8 +90,8 @@ public class KingdomMemberCommand {
                                         return 0;
                                     }
 
-                                    StringBuilder sb = new StringBuilder("Members of " + kingdom.name + ": ");
-                                    kingdom.members.forEach((uuid, rank) -> {
+                                    StringBuilder sb = new StringBuilder("Members of " + kingdom.getName() + ": ");
+                                    kingdom.getMembers().forEach((uuid, rank) -> {
                                         PlayerEntity player = executor.getServer().getPlayerManager().getPlayer(uuid);
                                         String name = (player != null) ? player.getName().getString() : uuid.toString();
                                         sb.append(name).append(" (").append(rank).append("), ");

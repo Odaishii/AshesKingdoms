@@ -1,8 +1,9 @@
 package com.odaishi.asheskingdoms.noapi;
 
-import com.odaishi.asheskingdoms.noapi.*;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -16,8 +17,10 @@ import java.util.UUID;
  */
 public final class NORuntimeAdapter implements NoApi {
     private static final NORuntimeAdapter INSTANCE = new NORuntimeAdapter();
+    private static MinecraftServer server;
 
     public static NORuntimeAdapter get() { return INSTANCE; }
+    public static void setServer(MinecraftServer server) { NORuntimeAdapter.server = server; }
 
     private final boolean present;
 
@@ -152,15 +155,34 @@ public final class NORuntimeAdapter implements NoApi {
     }
 
     @Override
-    public boolean tryAdd(UUID player, long amount) {
-        return false;
+    public boolean tryAdd(UUID playerId, long amount) {
+        if (server == null || !present || amount <= 0) return false;
+
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerId);
+        if (player == null) return false;
+
+        return deposit(player, amount);
     }
 
     @Override
-    public boolean tryRemove(UUID player, long amount) {
-        return false;
+    public boolean tryRemove(UUID playerId, long amount) {
+        if (server == null || !present || amount <= 0) return false;
+
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerId);
+        if (player == null) return false;
+
+        return withdraw(player, amount);
     }
 
+    @Override
+    public long getBalance(UUID playerId) {
+        if (server == null || !present) return 0;
+
+        ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerId);
+        if (player == null) return 0;
+
+        return getBalance(player);
+    }
 
     @Override
     public boolean tryRemove(PlayerEntity player, long amount) {
@@ -168,13 +190,8 @@ public final class NORuntimeAdapter implements NoApi {
     }
 
     @Override
-    public long getBalance(UUID player) {
-        return 0;
-    }
-
-    @Override
-    public boolean tryAdd(PlayerEntity player, long bronze) {
-        return false;
+    public boolean tryAdd(PlayerEntity player, long amount) {
+        return deposit(player, amount);
     }
 
     @Override

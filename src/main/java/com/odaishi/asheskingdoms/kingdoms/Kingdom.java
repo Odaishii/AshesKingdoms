@@ -3,6 +3,7 @@ package com.odaishi.asheskingdoms.kingdoms;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.ChunkPos;
 
 import java.util.*;
@@ -76,10 +77,29 @@ public class Kingdom {
         return members;
     }
 
+    // FIXED: Added isMember method
+    public boolean isMember(UUID playerId) {
+        return members.containsKey(playerId);
+    }
+
+    public boolean isMember(PlayerEntity player) {
+        return members.containsKey(player.getUuid());
+    }
+
     public boolean addMember(PlayerEntity player, String rank) {
         if (members.containsKey(player.getUuid())) return false;
         members.put(player.getUuid(), rank);
         return true;
+    }
+
+    public boolean addMember(UUID playerId, String rank) {
+        if (members.containsKey(playerId)) return false;
+        members.put(playerId, rank);
+        return true;
+    }
+
+    public boolean removeMember(UUID player) {
+        return members.remove(player) != null;
     }
 
     public boolean removeMember(PlayerEntity player) {
@@ -92,19 +112,68 @@ public class Kingdom {
         return true;
     }
 
+    public boolean setRank(UUID playerId, String rank) {
+        if (!members.containsKey(playerId)) return false;
+        members.put(playerId, rank);
+        return true;
+    }
+
     public String getRank(PlayerEntity player) {
         return members.get(player.getUuid());
+    }
+
+    public String getRank(UUID playerId) {
+        return members.get(playerId);
     }
 
     public boolean isOwner(PlayerEntity player) {
         return player.getUuid().equals(owner);
     }
 
-    public boolean hasPermission(PlayerEntity player, String requiredRank) {
+    public boolean isOwner(UUID playerId) {
+        return playerId.equals(owner);
+    }
+
+    public boolean hasPermission(PlayerEntity player, String permission) {
         String rank = getRank(player);
         if (rank == null) return false;
-        if (rank.equals("leader")) return true;
-        return rank.equals(requiredRank);
+
+        // Leader has all permissions
+        if ("leader".equals(rank)) return true;
+
+        // Define permission hierarchy
+        Map<String, Integer> permissionLevels = Map.of(
+                "leader", 3,
+                "officer", 2,
+                "member", 1
+        );
+
+        // Check if the player's rank has the required permission level
+        Integer playerLevel = permissionLevels.get(rank);
+        Integer requiredLevel = permissionLevels.get(permission);
+
+        return playerLevel != null && requiredLevel != null && playerLevel >= requiredLevel;
+    }
+
+    public boolean hasPermission(UUID playerId, String permission) {
+        String rank = getRank(playerId);
+        if (rank == null) return false;
+
+        // Leader has all permissions
+        if ("leader".equals(rank)) return true;
+
+        // Define permission hierarchy
+        Map<String, Integer> permissionLevels = Map.of(
+                "leader", 3,
+                "officer", 2,
+                "member", 1
+        );
+
+        // Check if the player's rank has the required permission level
+        Integer playerLevel = permissionLevels.get(rank);
+        Integer requiredLevel = permissionLevels.get(permission);
+
+        return playerLevel != null && requiredLevel != null && playerLevel >= requiredLevel;
     }
 
     /* -------------------- BASICS -------------------- */
@@ -117,8 +186,8 @@ public class Kingdom {
     /** Find the kingdom a player belongs to */
     public static Kingdom getPlayerKingdom(PlayerEntity player) {
         UUID playerUUID = player.getUuid();
-        for (Kingdom kingdom : KingdomManager.getAllKingdoms()) { // ✅ FIXED: call proper accessor
-            if (kingdom.getMembers().containsKey(playerUUID)) {
+        for (Kingdom kingdom : KingdomManager.getAllKingdoms()) {
+            if (kingdom.isMember(playerUUID)) {
                 return kingdom;
             }
         }

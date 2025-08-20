@@ -2,6 +2,8 @@ package com.odaishi.asheskingdoms.utils;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Identifier;
+import net.minecraft.registry.Registry;
 
 public class InventoryCoins {
 
@@ -12,13 +14,21 @@ public class InventoryCoins {
     public static long countCoins(PlayerEntity player) {
         long totalBronze = 0;
 
-        for (ItemStack stack : player.getInventory().main) {
+        for (int i = 0; i < player.getInventory().size(); i++) {
+            ItemStack stack = player.getInventory().getStack(i);
             if (stack.isEmpty()) continue;
 
-            String itemId = stack.getItem().toString();
-            if (itemId.equals(BRONZE_ID)) totalBronze += stack.getCount();
-            else if (itemId.equals(SILVER_ID)) totalBronze += stack.getCount() * 100L;
-            else if (itemId.equals(GOLD_ID)) totalBronze += stack.getCount() * 10000L;
+            // FIXED: Use proper item ID comparison
+            Identifier itemId = Registry.ITEM.getId(stack.getItem());
+            String itemString = itemId.toString();
+
+            if (itemString.equals(BRONZE_ID)) {
+                totalBronze += stack.getCount();
+            } else if (itemString.equals(SILVER_ID)) {
+                totalBronze += stack.getCount() * 100L;
+            } else if (itemString.equals(GOLD_ID)) {
+                totalBronze += stack.getCount() * 10000L;
+            }
         }
 
         return totalBronze;
@@ -37,70 +47,41 @@ public class InventoryCoins {
      * Removes a specific amount of coins (in bronze units) from the player's inventory.
      */
     public static void removeCoins(PlayerEntity player, long bronzeAmount) {
-        long[] coins = getCoinBreakdown(player);
-        long gold = coins[0];
-        long silver = coins[1];
-        long bronze = coins[2];
-
-        // Convert requested amount to gold/silver/bronze
         long remaining = bronzeAmount;
 
-        // Deduct gold first
-        long goldValue = gold * 10000L;
-        if (remaining >= goldValue) {
-            remaining -= goldValue;
-            gold = 0;
-        } else {
-            long goldUsed = remaining / 10000;
-            remaining -= goldUsed * 10000;
-            gold -= goldUsed;
-        }
+        // Remove gold coins first (most valuable)
+        remaining = removeCoinType(player, GOLD_ID, remaining, 10000L);
+        if (remaining <= 0) return;
 
-        // Deduct silver next
-        long silverValue = silver * 100L;
-        if (remaining >= silverValue) {
-            remaining -= silverValue;
-            silver = 0;
-        } else {
-            long silverUsed = remaining / 100;
-            remaining -= silverUsed * 100;
-            silver -= silverUsed;
-        }
+        // Then silver coins
+        remaining = removeCoinType(player, SILVER_ID, remaining, 100L);
+        if (remaining <= 0) return;
 
-        // Deduct bronze
-        if (remaining >= bronze) {
-            remaining -= bronze;
-            bronze = 0;
-        } else {
-            bronze -= remaining;
-            remaining = 0;
-        }
+        // Finally bronze coins
+        removeCoinType(player, BRONZE_ID, remaining, 1L);
+    }
 
-        // Now update inventory
-        for (ItemStack stack : player.getInventory().main) {
+    private static long removeCoinType(PlayerEntity player, String coinId, long remaining, long coinValue) {
+        if (remaining <= 0) return 0;
+
+        for (int i = 0; i < player.getInventory().size() && remaining > 0; i++) {
+            ItemStack stack = player.getInventory().getStack(i);
             if (stack.isEmpty()) continue;
 
-            String itemId = stack.getItem().toString();
-            if (itemId.equals(GOLD_ID) && gold < stack.getCount()) {
-                stack.decrement(stack.getCount() - (int) gold);
-                gold = 0;
-            } else if (itemId.equals(GOLD_ID)) {
-                stack.decrement((int) stack.getCount());
-            }
+            Identifier itemId = Registry.ITEM.getId(stack.getItem());
+            String itemString = itemId.toString();
 
-            if (itemId.equals(SILVER_ID) && silver < stack.getCount()) {
-                stack.decrement(stack.getCount() - (int) silver);
-                silver = 0;
-            } else if (itemId.equals(SILVER_ID)) {
-                stack.decrement((int) stack.getCount());
-            }
+            if (itemString.equals(coinId)) {
+                // Calculate how many coins of this type we need to remove
+                int coinsToRemove = (int) Math.min(stack.getCount(), (remaining + coinValue - 1) / coinValue);
 
-            if (itemId.equals(BRONZE_ID) && bronze < stack.getCount()) {
-                stack.decrement(stack.getCount() - (int) bronze);
-                bronze = 0;
-            } else if (itemId.equals(BRONZE_ID)) {
-                stack.decrement((int) stack.getCount());
+                if (coinsToRemove > 0) {
+                    stack.decrement(coinsToRemove);
+                    remaining -= coinsToRemove * coinValue;
+                }
             }
         }
+
+        return remaining;
     }
 }

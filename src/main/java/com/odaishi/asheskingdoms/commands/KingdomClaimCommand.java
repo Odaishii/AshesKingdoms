@@ -70,7 +70,13 @@ public class KingdomClaimCommand {
 
                                     // Add the claim
                                     kingdom.addClaim(pos);
-                                    KingdomManager.saveData();
+
+                                    // FIXED: Replace KingdomManager.saveData() with the correct method
+                                    try {
+                                        KingdomManager.saveToFile();
+                                    } catch (Exception e) {
+                                        player.sendMessage(Text.of("§cFailed to save kingdom data: " + e.getMessage()), false);
+                                    }
 
                                     player.sendMessage(Text.of("§aSuccessfully claimed chunk at " + pos.x + ", " + pos.z + "!"), false);
                                     return 1;
