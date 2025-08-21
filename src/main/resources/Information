@@ -1,0 +1,175 @@
+ASHES KINGDOMS MOD - COMPREHENSIVE FILE SUMMARY
+================================================
+
+MOD OVERVIEW:
+A TownyAdvanced-style territory claiming system for Fabric 1.21.1 with Numismatic Overhaul
+integration, kingdom management, warfare system, and personal claim features.
+
+CORE SYSTEMS:
+- Territory claiming with adjacency rules
+- Kingdom management with hierarchical ranks
+- Economy integration with Numismatic Overhaul
+- War declarations and conflict tracking
+- Personal claims within kingdom territory
+- Configurable kingdom settings
+
+FILE SUMMARIES:
+
+1. MAIN MOD CLASSES:
+
+AshesKingdoms.java (Main Mod Initializer)
+- Central mod initialization and coordination
+- Command registration and event handling
+- Server lifecycle management
+- Protection event system enforcement
+- Data persistence and cleanup scheduling
+
+Kingdom.java (Core Kingdom Data Structure)
+- Central data model for all kingdom operations
+- Territory, membership, and governance systems
+- Rank hierarchy with permission inheritance
+- Personal claim system with ownership tracking
+- JSON serialization for persistence
+
+KingdomManager.java (Global Kingdom Management)
+- Central manager for all kingdom operations
+- Player-kingdom association tracking
+- Invitation system with expiration
+- Deletion confirmation system
+- Economy helpers and chunk claiming logic
+
+2. ECONOMY/NO INTEGRATION:
+
+NoApi.java (Numismatic Overhaul API Interface)
+- Core interface defining currency operations
+- Player and UUID-based transaction methods
+- Bronze-based currency unit consistency
+- Safe transaction semantics with validation
+
+NORuntimeAdapter.java (Method Handle NO Adapter)
+- High-performance MethodHandle-based reflection
+- Multi-version NO package support
+- Automatic dependency detection
+- Event-driven balance change notifications
+
+ReflectionNoApiImpl.java (Reflection NO Adapter)
+- Fallback implementation using Java reflection
+- Graceful degradation when NO not installed
+- Safe currency operations with error handling
+- Compatibility with older NO versions
+
+NOCompatAPI.java (NO Compatibility Initializer)
+- Bootstrap class for NO integration
+- Automatic NO detection at runtime
+- Adapter initialization and logging
+- Soft dependency handling
+
+NoApiAccess.java (NO API Access Facade)
+- Singleton access point for currency operations
+- Automatic implementation selection
+- Runtime dependency detection
+- Null-object pattern fallback
+
+NOLog.java (NO Compatibility Logger)
+- Dedicated logging for NO integration
+- Formatted message support with varargs
+- Three log levels: info, warn, error
+- Consistent logging format
+
+NoEvents.java (NO Event System)
+- Event definitions for currency notifications
+- Balance change hooks for other mods
+- Fabric EventFactory-based dispatching
+- Transaction context providing
+
+InventoryCoins.java (Legacy Currency Utility) - DEPRECATED
+- Item-based coin handling fallback
+- Coin counting and denomination conversion
+- Inventory management for physical coins
+- Backward compatibility support
+
+3. COMMAND HANDLERS:
+
+KingdomCommand.java (Core Kingdom Management)
+- Primary command interface for kingdom operations
+- Creation, deletion, info, listing commands
+- Invitation system and rank management
+- Economy integration and tab completion
+
+KingdomMemberCommand.java (Member Management)
+- Player membership management commands
+- Rank assignment and member listing
+- Ownership verification for security
+- Real-time player lookup integration
+
+KingdomClaimCommand.java (Territory Claiming)
+- Chunk claiming operations interface
+- Adjacency validation and economy costs
+- Permission checking and kingdom verification
+- Centralized claim logic integration
+
+KingdomWarCommand.java (War Management)
+- Inter-kingdom warfare declarations
+- War tracking and status display
+- UUID-based conflict identification
+- War persistence integration
+
+KingdomPersonalClaimCommand.java (Personal Claims)
+- Personal chunk claim management
+- Economy cost validation and limits
+- Ownership verification and access control
+- Leadership notifications
+
+4. DATA STRUCTURES:
+
+KingdomSettings.java (Settings Management)
+- Configurable kingdom-wide rules system
+- Boolean-based settings with defaults
+- JSON serialization for persistence
+- Mob spawning, PVP, fire spread controls
+
+Rank.java (Rank Permission System)
+- Hierarchical role definitions
+- Configurable permission flags
+- Default permission set consistency
+- JSON serialization support
+
+KingdomWarManager.java (War Management System)
+- Inter-kingdom conflict tracking
+- War state management and persistence
+- NBT serialization for saves
+- Bilateral war detection
+
+PersonalClaim.java (Personal Claim System)
+- Player-specific chunk ownership
+- Time-based expiration system
+- Permission overriding capabilities
+- Integration with kingdom protection
+
+5. KEY INTEGRATION POINTS:
+
+- Numismatic Overhaul economy system
+- Fabric API event system
+- Minecraft server lifecycle
+- JSON and NBT persistence
+- Permission-based command system
+- Real-time player management
+
+TECHNICAL ARCHITECTURE:
+- Server-side only implementation
+- Thread-safe multiplayer design
+- Event-driven architecture
+- Soft dependency management
+- Graceful degradation features
+
+PERMISSION HIERARCHY:
+Leader > Assistant > Officer > Member > Ally > Outsider
+
+ECONOMY FEATURES:
+- Bronze-based currency system
+- Configurable costs for actions
+- Transaction safety with validation
+- Multiple implementation strategies
+
+This mod provides a comprehensive kingdom management system with territory control,
+economy integration, and social features for multiplayer Minecraft servers.

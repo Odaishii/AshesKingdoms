@@ -1,3 +1,31 @@
+/**
+ * REFLECTION-BASED NUMISMATIC OVERHAUL ADAPTER
+ *
+ * Provides a fallback implementation for Numismatic Overhaul integration using
+ * Java reflection. This class serves as an alternative to the MethodHandle-based
+ * implementation, providing compatibility with different NO versions.
+ *
+ * FEATURES:
+ * - Reflection-based access to Numismatic Overhaul currency system
+ * - Graceful fallback when NO is not installed
+ * - Safe currency operations with error handling
+ * - Compatibility with multiple NO versions
+ *
+ * OPERATIONS:
+ * - Balance checking and modification
+ * - Deposit and withdrawal with validation
+ * - Player currency component access via reflection
+ *
+ * USAGE:
+ * Automatically falls back to this implementation if the primary MethodHandle
+ * adapter fails or when NO uses older package structures.
+ *
+ * ERROR HANDLING:
+ * - Silently fails when NO is not available
+ * - Returns false for failed operations
+ * - Maintains gameplay continuity without NO dependency
+ */
+
 package com.odaishi.asheskingdoms.noapi;
 
 import net.minecraft.entity.player.PlayerEntity;

@@ -1,3 +1,37 @@
+/**
+ * KINGDOM WAR COMMAND HANDLER
+ *
+ * Provides in-game commands for declaring and managing inter-kingdom warfare.
+ * Enables kingdom leaders to initiate conflicts and monitor ongoing wars.
+ *
+ * COMMANDS:
+ * - /kingdom war declare <attacker> <defender> - Declares war between kingdoms
+ * - /kingdom war list - Lists all active and historical wars
+ *
+ * FUNCTIONALITY:
+ * - War declaration with automatic conflict creation
+ * - UUID-based war tracking and identification
+ * - War status display (active/ended)
+ * - Feedback messages for command execution
+ *
+ * SECURITY:
+ * - Currently open to any player (consider adding rank checks)
+ * - Future: Restrict to kingdom leaders/officers
+ * - Future: Add declaration cooldowns and costs
+ *
+ * INTEGRATION:
+ * - Direct interface with KingdomWarManager
+ * - War persistence through KingdomManager saves
+ * - Compatible with future war expansion features
+ *
+ * EXPANSION POINTS:
+ * - War resolution commands (/kingdom war end)
+ * - War status and information queries
+ * - Alliance system integration
+ * - War cost and economy requirements
+ * - Declarative war goals and victory conditions
+ */
+
 package com.odaishi.asheskingdoms.commands;
 
 import com.odaishi.asheskingdoms.kingdoms.KingdomWarManager;

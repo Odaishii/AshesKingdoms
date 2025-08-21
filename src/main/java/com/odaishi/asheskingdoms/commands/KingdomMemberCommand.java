@@ -1,3 +1,45 @@
+/**
+ * KINGDOM MEMBER MANAGEMENT COMMAND HANDLER
+ *
+ * Provides commands for managing kingdom membership, including adding, removing,
+ * and listing members with rank assignments. Restricted to kingdom leadership.
+ *
+ * COMMANDS:
+ * - /kingdom member add <player> <rank> - Adds player with specified rank
+ * - /kingdom member remove <player> - Removes player from kingdom
+ * - /kingdom member list - Lists all kingdom members with their ranks
+ *
+ * PERMISSION REQUIREMENTS:
+ * - All commands require kingdom ownership (leader rank)
+ * - Prevents unauthorized member management
+ * - Validates player existence and kingdom membership
+ *
+ * SECURITY FEATURES:
+ * - Ownership verification for sensitive operations
+ * - Player existence validation
+ * - Rank validity checking (through Kingdom.addMember)
+ * - Feedback messages for all operations
+ *
+ * USER EXPERIENCE:
+ * - Clear success/error messages for all operations
+ * - Player notifications for membership changes
+ * - Formatted member lists with rank display
+ * - UUID fallback for offline players in lists
+ *
+ * INTEGRATION:
+ * - Direct Kingdom object manipulation
+ * - Real-time player lookup via server manager
+ * - Rank system compatibility
+ * - Future: Rank-based permission delegation
+ *
+ * EXPANSION POINTS:
+ * - Rank modification commands
+ * - Bulk member operations
+ * - Member search and filtering
+ * - Offline player support
+ * - Membership audit logging
+ */
+
 package com.odaishi.asheskingdoms.commands;
 
 import com.odaishi.asheskingdoms.kingdoms.Kingdom;

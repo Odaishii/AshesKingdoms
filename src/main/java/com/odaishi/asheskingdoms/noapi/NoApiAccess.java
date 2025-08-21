@@ -1,3 +1,31 @@
+/**
+ * NUMISMATIC OVERHAUL API ACCESS FACADE
+ *
+ * Singleton access point for Numismatic Overhaul currency operations.
+ * Provides a unified interface that automatically selects the appropriate
+ * implementation based on NO availability at runtime.
+ *
+ * FEATURES:
+ * - Automatic implementation selection (Reflection vs Stub)
+ * - Singleton pattern for consistent API access
+ * - Runtime dependency detection and adaptation
+ * - Fallback to inert stub when NO not available
+ *
+ * IMPLEMENTATION STRATEGY:
+ * - Reflection-based implementation when NO present
+ * - Null-object pattern stub when NO absent
+ * - Lazy initialization for performance
+ *
+ * ERROR HANDLING:
+ * - Returns safe defaults (0 balance, false for operations)
+ * - No exceptions thrown for missing dependency
+ * - Graceful degradation of functionality
+ *
+ * USAGE:
+ * Primary access point for all currency operations throughout the mod.
+ * Ensures consistent behavior regardless of NO installation status.
+ */
+
 package com.odaishi.asheskingdoms.noapi;
 
 import net.fabricmc.loader.api.FabricLoader;

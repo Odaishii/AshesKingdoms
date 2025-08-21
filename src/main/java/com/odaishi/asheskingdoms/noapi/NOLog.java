@@ -1,3 +1,26 @@
+/**
+ * NUMISMATIC OVERHAUL COMPATIBILITY LOGGER
+ *
+ * Dedicated logging utility for Numismatic Overhaul integration components.
+ * Provides structured logging with consistent formatting for debugging and
+ * monitoring NO compatibility issues.
+ *
+ * FEATURES:
+ * - Dedicated log channel for NO-related messages
+ * - Formatted message support with varargs
+ * - Three log levels: info, warn, error
+ * - Consistent logging format across NO integration
+ *
+ * LOG CATEGORIES:
+ * - Info: Successful integration, component resolution
+ * - Warn: Non-critical issues, fallback scenarios
+ * - Error: Critical failures, integration problems
+ *
+ * USAGE:
+ * Centralized logging for all NO adapter components ensuring consistent
+ * error reporting and debugging information across the integration layer.
+ */
+
 package com.odaishi.asheskingdoms.noapi;
 
 

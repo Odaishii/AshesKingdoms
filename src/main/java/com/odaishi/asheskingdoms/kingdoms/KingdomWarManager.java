@@ -1,3 +1,43 @@
+/**
+ * KINGDOM WAR MANAGEMENT SYSTEM
+ *
+ * Handles inter-kingdom warfare declarations, tracking, and resolution.
+ * Provides a lightweight framework for kingdom conflicts with persistence
+ * and basic war state management.
+ *
+ * CORE FUNCTIONALITY:
+ * - War declaration between kingdoms
+ * - Active/inactive war state tracking
+ * - UUID-based war identification
+ * - NBT serialization for persistence
+ * - Bilateral war detection and management
+ *
+ * WAR LIFECYCLE:
+ * - Declaration: Creates new war with timestamp
+ * - Active State: Ongoing conflict period
+ * - Resolution: War ended or removed
+ * - Persistence: Saved across server restarts
+ *
+ * DATA STRUCTURE:
+ * - War objects with attacker/defender kingdoms
+ * - Unique UUID identification for each conflict
+ * - Timestamp tracking for war duration
+ * - Active flag for conflict status
+ *
+ * EXPANSION POINTS:
+ * - War states (preparation, active, ceasefire, resolution)
+ * - Participant tracking and alliances
+ * - PvP rules and territory restrictions
+ * - Victory conditions and war goals
+ * - Logging and war statistics
+ * - Timers and automatic resolution
+ *
+ * INTEGRATION:
+ * - Serializes to KingdomManager's NBT data
+ * - Provides war status to permission systems
+ * - Supports future war-related gameplay features
+ */
+
 package com.odaishi.asheskingdoms.kingdoms;
 
 import net.minecraft.nbt.NbtCompound;

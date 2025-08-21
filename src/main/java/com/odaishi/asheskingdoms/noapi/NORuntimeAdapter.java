@@ -1,3 +1,37 @@
+/**
+ * METHOD HANDLE-BASED NUMISMATIC OVERHAUL ADAPTER
+ *
+ * Primary integration layer for Numismatic Overhaul currency system using
+ * MethodHandle for high-performance reflection. Supports multiple NO versions
+ * and package structures without compile-time dependencies.
+ *
+ * FEATURES:
+ * - High-performance MethodHandle-based reflection
+ * - Multi-version support (com.glisco and io.wispforest packages)
+ * - Automatic detection of NO installation status
+ * - Comprehensive error handling and fallback mechanisms
+ * - Event-driven balance change notifications
+ *
+ * VERSION SUPPORT:
+ * - Detects and adapts to different NO package structures
+ * - Supports multiple component class naming conventions
+ * - Handles both old and new NO API versions
+ *
+ * PERFORMANCE:
+ * - MethodHandle provides near-native performance
+ * - Minimal overhead for currency operations
+ * - Efficient component resolution caching
+ *
+ * ERROR RECOVERY:
+ * - Graceful degradation when NO not present
+ * - Detailed logging for debugging integration issues
+ * - Fallback to alternative implementations available
+ *
+ * USAGE:
+ * Serves as the primary currency interface for all economy operations
+ * in Ashes Kingdoms, providing seamless Numismatic Overhaul integration.
+ */
+
 package com.odaishi.asheskingdoms.noapi;
 
 import net.fabricmc.loader.api.FabricLoader;
