@@ -29,6 +29,8 @@
 package com.odaishi.asheskingdoms.noapi;
 
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
+import java.util.UUID;
 
 import java.lang.reflect.Method;
 
@@ -130,6 +132,70 @@ public abstract class ReflectionNoApiImpl implements NoApi {
             return false; // not enough money
         }
         return withdraw(player, bronze);
+    }
+
+    @Override
+    public long getBalance(UUID playerId) {
+        PlayerEntity player = getPlayerFromUUID(playerId);
+        if (player != null) {
+            return getBalance(player);
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean deposit(UUID playerId, long bronze) {
+        PlayerEntity player = getPlayerFromUUID(playerId);
+        if (player != null) {
+            return deposit(player, bronze);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean withdraw(UUID playerId, long bronze) {
+        PlayerEntity player = getPlayerFromUUID(playerId);
+        if (player != null) {
+            return withdraw(player, bronze);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setBalance(UUID playerId, long bronze) {
+        PlayerEntity player = getPlayerFromUUID(playerId);
+        if (player != null) {
+            return setBalance(player, bronze);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean tryRemove(UUID player, long amount) {
+        PlayerEntity playerEntity = getPlayerFromUUID(player);
+        if (playerEntity != null) {
+            return tryRemove(playerEntity, amount);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean tryAdd(UUID player, long amount) {
+        PlayerEntity playerEntity = getPlayerFromUUID(player);
+        if (playerEntity != null) {
+            return tryAdd(playerEntity, amount);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return noAvailable;
+    }
+
+    // Helper method to get PlayerEntity from UUID
+    private PlayerEntity getPlayerFromUUID(UUID playerId) {
+        return null;
     }
 
     /**

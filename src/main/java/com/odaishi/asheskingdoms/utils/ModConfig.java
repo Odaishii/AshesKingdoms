@@ -1,9 +1,3 @@
-/**
- * CONFIGURATION MANAGER FOR ASHES KINGDOMS
- *
- * Handles mod configuration including default values, limits,
- * and economy settings. Loads from config file on startup.
- */
 package com.odaishi.asheskingdoms.utils;
 
 import com.google.gson.Gson;
@@ -14,45 +8,30 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class ModConfig {
-    private static ModConfig INSTANCE;
-    private File configFile;
-
-    // Configuration values
+    // Configuration values with defaults
     public int maxPersonalClaimsPerPlayer = 5;
-    public long personalClaimCost = 200; // bronze coins
+    public long personalClaimCost = 200;
     public boolean allowPersonalClaims = true;
-    public int personalClaimDurationDays = 30; // 0 for permanent
+    public int personalClaimDurationDays = 30;
 
-    public static void loadConfig(File configDir) {
+    // No static INSTANCE, just load and return a new instance
+    public static ModConfig loadConfig(File configDir) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         File configFile = new File(configDir, "asheskingdoms.json");
+        ModConfig config = new ModConfig();
 
         try {
             if (configFile.exists()) {
-                INSTANCE = gson.fromJson(new FileReader(configFile), ModConfig.class);
+                config = gson.fromJson(new FileReader(configFile), ModConfig.class);
             } else {
-                INSTANCE = new ModConfig();
                 configDir.mkdirs();
                 try (FileWriter writer = new FileWriter(configFile)) {
-                    gson.toJson(INSTANCE, writer);
+                    gson.toJson(config, writer);
                 }
             }
-            INSTANCE.configFile = configFile;
         } catch (IOException e) {
-            // Handle error
+            System.err.println("Failed to load config: " + e.getMessage());
         }
-    }
-
-    public static ModConfig getInstance() {
-        return INSTANCE;
-    }
-
-    public void save() {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        try (FileWriter writer = new FileWriter(configFile)) {
-            gson.toJson(this, writer);
-        } catch (IOException e) {
-            // Handle error
-        }
+        return config;
     }
 }

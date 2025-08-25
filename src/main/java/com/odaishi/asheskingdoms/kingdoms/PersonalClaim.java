@@ -10,6 +10,8 @@
  * - Time-based expiration system for temporary claims
  * - Integration with kingdom permission system
  * - Automatic cleanup of expired claims
+ * - Active state tracking for claim revocation
+ * - Automatic removal when players leave kingdom
  *
  * PERMISSIONS GRANTED:
  * - Full build and destroy rights in personal claim
@@ -32,6 +34,7 @@ public class PersonalClaim {
     private final ChunkPos chunk;
     private final long creationTime;
     private long expirationTime; // -1 for permanent claims
+    private boolean active = true; // ← ADDED: Track if claim is active
 
     public PersonalClaim(UUID playerId, ChunkPos chunk) {
         this(playerId, chunk, -1); // Default to permanent claim
@@ -42,6 +45,7 @@ public class PersonalClaim {
         this.chunk = chunk;
         this.creationTime = System.currentTimeMillis();
         this.expirationTime = durationMillis > 0 ? creationTime + durationMillis : -1;
+        this.active = true; // ← ADDED: New claims are always active
     }
 
     public UUID getPlayerId() {
@@ -82,5 +86,19 @@ public class PersonalClaim {
         } else {
             this.expirationTime = System.currentTimeMillis() + additionalMillis;
         }
+    }
+
+    // ← ADDED: Active state management
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    // ← ADDED: Check if claim should be removed
+    public boolean shouldRemove() {
+        return !active || isExpired();
     }
 }

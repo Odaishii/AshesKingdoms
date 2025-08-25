@@ -51,16 +51,43 @@ public class NoApiAccess {
                     }
 
                     @Override
+                    public boolean isAvailable() {
+                        return false;
+                    }
+
+                    @Override
                     public long getBalance(UUID player) {
                         return 0;
                     }
+
+                    @Override
+                    public boolean deposit(UUID playerId, long bronze) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean withdraw(UUID playerId, long bronze) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean setBalance(UUID playerId, long bronze) {
+                        return false;
+                    }
+
+
                 }; // The reflective bridge we wrote
             } else {
                 INSTANCE = new NoApi() {
                     @Override public long getBalance(net.minecraft.entity.player.PlayerEntity player) { return 0; }
                     @Override public boolean deposit(net.minecraft.entity.player.PlayerEntity player, long bronze) { return false; }
                     @Override public boolean withdraw(net.minecraft.entity.player.PlayerEntity player, long bronze) { return false; }
-                    @Override public boolean setBalance(net.minecraft.entity.player.PlayerEntity player, long bronze) { return false; }
+
+                    @Override
+                    public boolean setBalance(net.minecraft.entity.player.PlayerEntity player, long bronze) {
+                        return false;
+                    }
+
 
                     @Override
                     public boolean tryAdd(UUID player, long amount) {
@@ -78,12 +105,32 @@ public class NoApiAccess {
                     }
 
                     @Override
+                    public boolean deposit(UUID playerId, long bronze) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean withdraw(UUID playerId, long bronze) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean setBalance(UUID playerId, long bronze) {
+                        return false;
+                    }
+
+                    @Override
                     public boolean tryRemove(PlayerEntity player, long bronze) {
                         return false;
                     }
 
                     @Override
                     public boolean tryAdd(PlayerEntity player, long bronze) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isAvailable() {
                         return false;
                     }
                 };

@@ -20,6 +20,11 @@
  * - publicAccess: Grants outsiders basic access to kingdom territory
  * - animalSpawning: Controls passive animal spawning in kingdom claims
  *
+ * TREASURY SETTINGS:
+ * - baseUpkeep: Daily base upkeep cost in bronze units
+ * - claimUpkeep: Daily upkeep cost per claim in bronze units
+ * - enableUpkeep: Whether the upkeep system is enabled
+ *
  * USAGE:
  * Settings can be modified by kingdom leaders and assistants through commands,
  * affecting all territory owned by the kingdom.
@@ -32,10 +37,18 @@ import java.util.Map;
 
 public class KingdomSettings {
     private final Map<String, Boolean> settings;
+    private long baseUpkeep; // Daily base upkeep cost in bronze units
+    private long claimUpkeep; // Daily upkeep cost per claim in bronze units
+    private boolean enableUpkeep; // Whether upkeep system is enabled
 
     public KingdomSettings() {
         settings = new HashMap<>();
         setDefaultSettings();
+
+        // Default treasury settings
+        this.baseUpkeep = 1000; // 10 copper (1000 bronze) daily base upkeep
+        this.claimUpkeep = 100; // 1 copper (100 bronze) per claim daily
+        this.enableUpkeep = true; // Upkeep system enabled by default
     }
 
     private void setDefaultSettings() {
@@ -59,21 +72,71 @@ public class KingdomSettings {
         }
     }
 
+    /* -------------------- TREASURY SETTINGS -------------------- */
+
+    public long getBaseUpkeep() {
+        return baseUpkeep;
+    }
+
+    public void setBaseUpkeep(long baseUpkeep) {
+        this.baseUpkeep = baseUpkeep;
+    }
+
+    public long getClaimUpkeep() {
+        return claimUpkeep;
+    }
+
+    public void setClaimUpkeep(long claimUpkeep) {
+        this.claimUpkeep = claimUpkeep;
+    }
+
+    public boolean isUpkeepEnabled() {
+        return enableUpkeep;
+    }
+
+    public void setUpkeepEnabled(boolean enableUpkeep) {
+        this.enableUpkeep = enableUpkeep;
+    }
+
+    /* -------------------- SERIALIZATION -------------------- */
+
     public JsonObject toJson() {
         JsonObject obj = new JsonObject();
+
+        // Boolean settings
         for (Map.Entry<String, Boolean> entry : settings.entrySet()) {
             obj.addProperty(entry.getKey(), entry.getValue());
         }
+
+        // Treasury settings
+        obj.addProperty("baseUpkeep", baseUpkeep);
+        obj.addProperty("claimUpkeep", claimUpkeep);
+        obj.addProperty("enableUpkeep", enableUpkeep);
+
         return obj;
     }
 
     public static KingdomSettings fromJson(JsonObject obj) {
         KingdomSettings settings = new KingdomSettings();
+
+        // Load boolean settings
         for (String key : obj.keySet()) {
             if (settings.settings.containsKey(key)) {
                 settings.setSetting(key, obj.get(key).getAsBoolean());
             }
         }
+
+        // Load treasury settings (with backward compatibility)
+        if (obj.has("baseUpkeep")) {
+            settings.setBaseUpkeep(obj.get("baseUpkeep").getAsLong());
+        }
+        if (obj.has("claimUpkeep")) {
+            settings.setClaimUpkeep(obj.get("claimUpkeep").getAsLong());
+        }
+        if (obj.has("enableUpkeep")) {
+            settings.setUpkeepEnabled(obj.get("enableUpkeep").getAsBoolean());
+        }
+
         return settings;
     }
 
@@ -81,6 +144,12 @@ public class KingdomSettings {
         return new String[]{
                 "mobSpawning", "fireSpread", "tntExplosion", "pvp",
                 "mobGriefing", "friendlyFire", "publicAccess", "animalSpawning"
+        };
+    }
+
+    public static String[] getTreasurySettings() {
+        return new String[]{
+                "baseUpkeep", "claimUpkeep", "enableUpkeep"
         };
     }
 }

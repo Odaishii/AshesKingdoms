@@ -219,6 +219,21 @@ public final class NORuntimeAdapter implements NoApi {
     }
 
     @Override
+    public boolean deposit(UUID playerId, long bronze) {
+        return false;
+    }
+
+    @Override
+    public boolean withdraw(UUID playerId, long bronze) {
+        return false;
+    }
+
+    @Override
+    public boolean setBalance(UUID playerId, long bronze) {
+        return false;
+    }
+
+    @Override
     public boolean tryRemove(PlayerEntity player, long amount) {
         return withdraw(player, amount);
     }
@@ -226,6 +241,11 @@ public final class NORuntimeAdapter implements NoApi {
     @Override
     public boolean tryAdd(PlayerEntity player, long amount) {
         return deposit(player, amount);
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return false;
     }
 
     @Override

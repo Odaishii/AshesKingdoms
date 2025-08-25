@@ -87,6 +87,7 @@ import com.odaishi.asheskingdoms.commands.KingdomMemberCommand;
 import com.odaishi.asheskingdoms.commands.KingdomSettingsCommand;
 import com.odaishi.asheskingdoms.commands.KingdomPersonalClaimCommand;
 import com.odaishi.asheskingdoms.kingdoms.Kingdom;
+import com.odaishi.asheskingdoms.kingdoms.KingdomWarManager;
 import com.odaishi.asheskingdoms.noapi.NoApi;
 import com.odaishi.asheskingdoms.noapi.NORuntimeAdapter;
 import com.odaishi.asheskingdoms.kingdoms.KingdomManager;
@@ -95,6 +96,7 @@ import com.odaishi.asheskingdoms.utils.ModConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
@@ -102,6 +104,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.WorldSavePath;
 import com.odaishi.asheskingdoms.commands.KingdomWarCommand;
+import net.minecraft.util.math.ChunkPos;
 
 import java.io.File;
 import java.util.UUID;
@@ -116,17 +119,38 @@ public class AshesKingdoms implements ModInitializer {
 	private static AshesKingdoms INSTANCE;
 	private MinecraftServer server;
 	private ScheduledExecutorService scheduler;
+	private static ModConfig config; // ← ADD CONFIG STORAGE
 
 	public static AshesKingdoms getInstance() {
 		return INSTANCE;
+	}
+
+	// ← ADD CONFIG GETTER METHOD
+	public static ModConfig getConfig() {
+		if (config == null) {
+			config = new ModConfig(); // Fallback if not loaded
+		}
+		return config;
 	}
 
 	@Override
 	public void onInitialize() {
 		INSTANCE = this;
 
+		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			KingdomWarManager.onServerTick();
+		});
+
 		// Load configuration
-		ModConfig.loadConfig(new File("config"));
+		config = ModConfig.loadConfig(new File("config"));
+
+		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			KingdomManager.INSTANCE.onServerTick();
+		});
+
+
+		// Load configuration - FIXED: Store the returned config
+		config = ModConfig.loadConfig(new File("config")); // ← FIXED THIS LINE
 
 		// Register commands
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -142,9 +166,14 @@ public class AshesKingdoms implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			this.server = server;
 			KingdomManager.setServer(server);
+			NORuntimeAdapter.setServer(server);
 			loadData();
 			registerProtectionEvents();
 			startCleanupScheduler();
+		});
+
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+			KingdomCommand.register(dispatcher);
 		});
 
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
@@ -154,6 +183,17 @@ public class AshesKingdoms implements ModInitializer {
 
 		System.out.println("[AshesKingdoms] Using item-based economy system.");
 		System.out.println("[AshesKingdoms] Mod initialized successfully.");
+	}
+
+	private void startWarCaptureMonitor() {
+		scheduler.scheduleAtFixedRate(() -> {
+			if (server != null && !server.isStopped()) {
+				server.execute(() -> {
+					// Monitor active captures and update bossbars
+					KingdomWarManager.updateActiveCaptures(server);
+				});
+			}
+		}, 1, 1, TimeUnit.SECONDS); // Check every second
 	}
 
 	private void startCleanupScheduler() {
@@ -190,6 +230,13 @@ public class AshesKingdoms implements ModInitializer {
 		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
 			if (player.isCreative()) return ActionResult.PASS;
 
+			// WAR CAPTURE CHECK - Add this at the beginning
+			ChunkPos chunkPos = new ChunkPos(pos);
+			if (KingdomWarManager.isChunkBeingCaptured(chunkPos)) {
+				player.sendMessage(net.minecraft.text.Text.of("§cYou cannot build while territory is being captured!"), false);
+				return ActionResult.FAIL;
+			}
+
 			Kingdom kingdom = KingdomManager.getKingdomAt(new net.minecraft.util.math.ChunkPos(pos));
 			if (kingdom != null) {
 				// Check personal claims first
@@ -213,6 +260,13 @@ public class AshesKingdoms implements ModInitializer {
 		// Block breaking protection with personal claim support
 		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
 			if (player.isCreative()) return ActionResult.PASS;
+
+			// WAR CAPTURE CHECK - Add this at the beginning
+			ChunkPos chunkPos = new ChunkPos(pos);
+			if (KingdomWarManager.isChunkBeingCaptured(chunkPos)) {
+				player.sendMessage(net.minecraft.text.Text.of("§cYou cannot break blocks while territory is being captured!"), false);
+				return ActionResult.FAIL;
+			}
 
 			Kingdom kingdom = KingdomManager.getKingdomAt(new net.minecraft.util.math.ChunkPos(pos));
 			if (kingdom != null) {
@@ -240,6 +294,13 @@ public class AshesKingdoms implements ModInitializer {
 
 			net.minecraft.util.math.BlockPos pos = hitResult.getBlockPos();
 			net.minecraft.block.BlockState state = world.getBlockState(pos);
+
+			// WAR CAPTURE CHECK - Add this at the beginning
+			ChunkPos chunkPos = new ChunkPos(pos);
+			if (KingdomWarManager.isChunkBeingCaptured(chunkPos)) {
+				player.sendMessage(net.minecraft.text.Text.of("§cYou cannot interact with blocks while territory is being captured!"), false);
+				return ActionResult.FAIL;
+			}
 
 			Kingdom kingdom = KingdomManager.getKingdomAt(new net.minecraft.util.math.ChunkPos(pos));
 			if (kingdom != null) {
@@ -294,6 +355,13 @@ public class AshesKingdoms implements ModInitializer {
 			if (player.isCreative()) return ActionResult.PASS;
 			if (!(entity instanceof net.minecraft.entity.player.PlayerEntity)) return ActionResult.PASS;
 
+			// WAR CAPTURE CHECK - Allow PVP during captures
+			ChunkPos chunkPos = new ChunkPos(entity.getBlockPos());
+			if (KingdomWarManager.isChunkBeingCaptured(chunkPos)) {
+				// PVP is always allowed during war captures
+				return ActionResult.PASS;
+			}
+
 			Kingdom kingdom = KingdomManager.getKingdomAt(new net.minecraft.util.math.ChunkPos(entity.getBlockPos()));
 			if (kingdom != null) {
 				// Check kingdom settings for PVP
@@ -309,6 +377,13 @@ public class AshesKingdoms implements ModInitializer {
 		UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
 			if (player.isCreative()) return ActionResult.PASS;
 			if (entity instanceof net.minecraft.entity.player.PlayerEntity) return ActionResult.PASS;
+
+			// WAR CAPTURE CHECK - Add this at the beginning
+			ChunkPos chunkPos = new ChunkPos(entity.getBlockPos());
+			if (KingdomWarManager.isChunkBeingCaptured(chunkPos)) {
+				player.sendMessage(net.minecraft.text.Text.of("§cYou cannot damage mobs while territory is being captured!"), false);
+				return ActionResult.FAIL;
+			}
 
 			Kingdom kingdom = KingdomManager.getKingdomAt(new net.minecraft.util.math.ChunkPos(entity.getBlockPos()));
 			if (kingdom != null && !kingdom.hasPermission(player, "mobDamage")) {
