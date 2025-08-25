@@ -8,8 +8,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.entity.boss.BossBar;
+import net.minecraft.entity.boss.ServerBossBar;
+import net.minecraft.util.Formatting;
 
 import java.util.*;
+
+import static com.odaishi.asheskingdoms.commands.KingdomCommand.notifyKingdom;
 
 public class KingdomWarManager {
 
@@ -22,6 +27,14 @@ public class KingdomWarManager {
         public boolean active;
         public final Set<ChunkPos> capturedClaims;
         public final ChunkPos defenderHomeblock;
+        public boolean attackerVictory = false;
+        public boolean defenderSurrendered = false;
+        public boolean warEndedEarly = false;
+        public UUID endedBy = null; // Who ended the war early
+
+        public boolean isConquestComplete() {
+            return isHomeblockCaptured() || defenderSurrendered;
+        }
 
         public War(UUID id, String attacker, String defender, long declarationTime,
                    long gracePeriodEnd, boolean active, ChunkPos defenderHomeblock) {
@@ -37,7 +50,7 @@ public class KingdomWarManager {
 
         public War(String attacker, String defender, ChunkPos defenderHomeblock) {
             this(UUID.randomUUID(), attacker, defender, System.currentTimeMillis(),
-                    System.currentTimeMillis() + 172800000, true, defenderHomeblock); // 48-hour grace period
+                    System.currentTimeMillis() + 10000, true, defenderHomeblock); // 48-hour grace period
         }
 
         public boolean isInGracePeriod() {
@@ -53,6 +66,129 @@ public class KingdomWarManager {
             if (defenderKingdom == null) return 0;
             int totalClaims = defenderKingdom.getClaimCount();
             return totalClaims > 0 ? (double) capturedClaims.size() / totalClaims : 0;
+        }
+
+        public static void updateActiveCaptures(MinecraftServer server) {
+            if (server == null) return;
+
+            // Clean up old boss bars for players who left
+            Iterator<Map.Entry<UUID, ServerBossBar>> bossBarIterator = captureBossBars.entrySet().iterator();
+            while (bossBarIterator.hasNext()) {
+                Map.Entry<UUID, ServerBossBar> entry = bossBarIterator.next();
+                if (server.getPlayerManager().getPlayer(entry.getKey()) == null) {
+                    entry.getValue().clearPlayers();
+                    bossBarIterator.remove();
+                }
+            }
+
+            // Update all active captures and boss bars
+            Iterator<Map.Entry<ChunkPos, CaptureProgress>> captureIterator = activeCaptures.entrySet().iterator();
+            while (captureIterator.hasNext()) {
+                Map.Entry<ChunkPos, CaptureProgress> entry = captureIterator.next();
+                ChunkPos chunk = entry.getKey();
+                CaptureProgress progress = entry.getValue();
+
+                // Update players in the capture zone
+                updatePlayersInCaptureZone(chunk, server);
+
+                // Update boss bars for players in this capture zone
+                updateBossBarsForChunk(chunk, progress, server);
+
+                // Check if capture is complete
+                if (progress.updateProgress()) {
+                    // Capture finished
+                    captureIterator.remove();
+                    completeCapture(chunk, progress);
+                    cleanupBossBarsForChunk(chunk);
+                }
+            }
+        }
+
+        private static void updatePlayersInCaptureZone(ChunkPos chunk, MinecraftServer server) {
+            Set<UUID> playersInZone = playersInCaptureZones.computeIfAbsent(chunk, k -> new HashSet<>());
+            Set<UUID> currentPlayers = new HashSet<>();
+
+            // Find all players currently in this chunk
+            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                ChunkPos playerChunk = new ChunkPos(player.getBlockPos());
+                if (playerChunk.equals(chunk)) {
+                    currentPlayers.add(player.getUuid());
+                    if (!playersInZone.contains(player.getUuid())) {
+                        // Player entered capture zone
+                        player.sendMessage(Text.literal("§6You entered a contested territory!"), false);
+                    }
+                }
+            }
+
+            // Remove players who left the zone from tracking
+            playersInZone.removeIf(playerId -> !currentPlayers.contains(playerId));
+            playersInCaptureZones.put(chunk, currentPlayers);
+        }
+
+        private static void updateBossBarsForChunk(ChunkPos chunk, CaptureProgress progress, MinecraftServer server) {
+            Set<UUID> playersInZone = playersInCaptureZones.getOrDefault(chunk, new HashSet<>());
+
+            for (UUID playerId : playersInZone) {
+                ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerId);
+                if (player != null) {
+                    ServerBossBar bossBar = captureBossBars.computeIfAbsent(playerId, id -> {
+                        ServerBossBar newBossBar = new ServerBossBar(
+                                Text.literal("Capturing Territory"),
+                                BossBar.Color.RED,
+                                BossBar.Style.PROGRESS
+                        );
+                        newBossBar.addPlayer(player);
+                        return newBossBar;
+                    });
+
+                    // Update boss bar progress and title
+                    double progressPercent = progress.getProgressPercentage();
+                    bossBar.setPercent((float) progressPercent);
+
+                    Kingdom capturingKingdom = KingdomManager.getKingdom(progress.capturingKingdom.toString());
+                    String kingdomName = capturingKingdom != null ? capturingKingdom.getName() : "Unknown";
+
+                    bossBar.setName(Text.literal("Capturing for " + kingdomName + ": " +
+                            String.format("%.0f%%", progressPercent * 100)));
+                }
+            }
+        }
+
+        private static void cleanupBossBarsForChunk(ChunkPos chunk) {
+            Set<UUID> playersInZone = playersInCaptureZones.remove(chunk);
+            if (playersInZone != null) {
+                for (UUID playerId : playersInZone) {
+                    ServerBossBar bossBar = captureBossBars.remove(playerId);
+                    if (bossBar != null) {
+                        bossBar.clearPlayers();
+                    }
+                }
+            }
+        }
+
+        private static void completeCapture(ChunkPos chunk, CaptureProgress progress) {
+            // Find the war that this capture belongs to
+            for (War war : wars.values()) {
+                if (war.active) {
+                    Kingdom capturingKingdom = KingdomManager.getKingdom(progress.capturingKingdom.toString());
+                    if (capturingKingdom != null && war.attacker.equals(capturingKingdom.getName())) {
+                        war.capturedClaims.add(chunk);
+
+                        // Check if homeblock was captured (victory condition)
+                        if (chunk.equals(war.defenderHomeblock)) {
+                            endWar(war.id, true);
+                            broadcastVictory(war);
+                        }
+
+                        try {
+                            KingdomManager.saveToFile();
+                        } catch (Exception e) {
+                            System.err.println("Failed to save war data: " + e.getMessage());
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         public NbtCompound toNbt() {
@@ -270,14 +406,18 @@ public class KingdomWarManager {
     }
 
     private static void handleWarVictory(War war) {
-        // Transfer captured claims to attacker
-        Kingdom attackerKingdom = KingdomManager.getKingdom(war.attacker);
         Kingdom defenderKingdom = KingdomManager.getKingdom(war.defender);
+        if (defenderKingdom != null) {
+            if (war.attackerVictory) {
+                // Attacker wins - defender kingdom goes into falling state
+                defenderKingdom.setFalling(true);
+                defenderKingdom.markDirty();
 
-        if (attackerKingdom != null && defenderKingdom != null) {
-            for (ChunkPos claim : war.capturedClaims) {
-                defenderKingdom.getClaimedChunks().remove(claim);
-                attackerKingdom.addClaim(claim);
+                // Notify both kingdoms
+                notifyKingdom(KingdomManager.getKingdom(war.attacker),
+                        "§aVictory! " + war.defender + " has fallen and can now be claimed!");
+                notifyKingdom(defenderKingdom,
+                        "§cDefeat! Your kingdom has fallen. It can now be claimed by " + war.attacker);
             }
         }
     }

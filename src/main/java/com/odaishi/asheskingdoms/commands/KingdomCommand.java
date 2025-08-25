@@ -35,21 +35,39 @@ public class KingdomCommand {
                 .then(literal("relations")
                         .executes(context -> showRelations(context)))
                 .then(literal("ally")
-                        .then(literal("add").then(argument("kingdom", StringArgumentType.word())
+                        .then(literal("add")
+                                .then(argument("kingdom", StringArgumentType.word())
                                         .suggests((context, builder) -> suggestOtherKingdoms(context, builder).buildFuture())
-                                        .executes(context -> addAlly(context, StringArgumentType.getString(context, "kingdom"))))
-                                .then(literal("remove").then(argument("kingdom", StringArgumentType.word())
-                                                .suggests((context, builder) -> suggestAllies(context, builder).buildFuture())
-                                                .executes(context -> removeAlly(context, StringArgumentType.getString(context, "kingdom"))))
-                                        .then(literal("list").executes(context -> listAllies(context))))
-                                .then(literal("enemy")
-                                        .then(literal("add").then(argument("kingdom", StringArgumentType.word())
-                                                        .suggests((context, builder) -> suggestOtherKingdoms(context, builder).buildFuture())
-                                                        .executes(context -> addEnemy(context, StringArgumentType.getString(context, "kingdom"))))
-                                                .then(literal("remove").then(argument("kingdom", StringArgumentType.word())
-                                                                .suggests((context, builder) -> suggestEnemies(context, builder).buildFuture())
-                                                                .executes(context -> removeEnemy(context, StringArgumentType.getString(context, "kingdom"))))
-                                                        .then(literal("list").executes(context -> listEnemies(context))))
+                                        .executes(context -> addAlly(context, StringArgumentType.getString(context, "kingdom")))
+                                )
+                        )
+                        .then(literal("remove")
+                                .then(argument("kingdom", StringArgumentType.word())
+                                        .suggests((context, builder) -> suggestAllies(context, builder).buildFuture())
+                                        .executes(context -> removeAlly(context, StringArgumentType.getString(context, "kingdom")))
+                                )
+                        )
+                        .then(literal("list")
+                                .executes(context -> listAllies(context))
+                        )
+                )
+                .then(literal("enemy")
+                        .then(literal("add")
+                                .then(argument("kingdom", StringArgumentType.word())
+                                        .suggests((context, builder) -> suggestOtherKingdoms(context, builder).buildFuture())
+                                        .executes(context -> addEnemy(context, StringArgumentType.getString(context, "kingdom")))
+                                )
+                        )
+                        .then(literal("remove")
+                                .then(argument("kingdom", StringArgumentType.word())
+                                        .suggests((context, builder) -> suggestEnemies(context, builder).buildFuture())
+                                        .executes(context -> removeEnemy(context, StringArgumentType.getString(context, "kingdom")))
+                                )
+                        )
+                        .then(literal("list")
+                                .executes(context -> listEnemies(context))
+                        )
+                )
                                                 // ==================== END DIPLOMACY COMMANDS ====================
 
                                                 .then(literal("treasury")
@@ -64,9 +82,8 @@ public class KingdomCommand {
                                                                         return 0;
                                                                     }
                                                                     return depositToTreasury(context, amount);
-                                                                })
-                                                        ))
-
+                                                                }))
+                                                        )
                                                         .then(literal("withdraw").then(argument("amount", StringArgumentType.greedyString())
                                                                 .executes(context -> {
                                                                     String amountStr = StringArgumentType.getString(context, "amount");
@@ -76,9 +93,10 @@ public class KingdomCommand {
                                                                         return 0;
                                                                     }
                                                                     return withdrawFromTreasury(context, amount);
-                                                                })
-                                                        )))
-// MOVE ADMIN COMMAND HERE - ROOT LEVEL
+                                                                }))
+                                                        )
+                                                )
+                                                // MOVE ADMIN COMMAND HERE - ROOT LEVEL
                                                 .then(literal("admin")
                                                         .requires(source -> source.hasPermissionLevel(4)) // Only OPs can use
                                                         .then(literal("forceupkeep")
@@ -130,16 +148,19 @@ public class KingdomCommand {
                                                 )
                                                 .then(literal("invite").then(argument("player", StringArgumentType.word())
                                                         .suggests((context, builder) -> suggestInvitablePlayers(context, builder).buildFuture())
-                                                        .executes(context -> invitePlayer(context, StringArgumentType.getString(context, "player")))))
+                                                        .executes(context -> invitePlayer(context, StringArgumentType.getString(context, "player"))))
+                                                )
                                                 .then(literal("accept").executes(context -> acceptInvite(context)))
                                                 .then(literal("decline").executes(context -> declineInvite(context)))
                                                 .then(literal("setrank").then(argument("player", StringArgumentType.word())
-                                                        .suggests((context, builder) -> suggestMembers(context, builder).buildFuture())
-                                                        .then(argument("rank", StringArgumentType.word())
-                                                                .suggests((context, builder) -> suggestRanks(builder).buildFuture())
-                                                                .executes(context -> setRank(context,
-                                                                        StringArgumentType.getString(context, "player"),
-                                                                        StringArgumentType.getString(context, "rank")))))))))));
+                                                                .suggests((context, builder) -> suggestMembers(context, builder).buildFuture())
+                                                                .then(argument("rank", StringArgumentType.word())
+                                                                        .suggests((context, builder) -> suggestRanks(builder).buildFuture())
+                                                                        .executes(context -> setRank(context,
+                                                                                StringArgumentType.getString(context, "player"),
+                                                                                StringArgumentType.getString(context, "rank"))))
+                                                        )
+                                                ));
     }
 
     // ==================== DIPLOMACY COMMAND METHODS ====================
@@ -273,7 +294,7 @@ public class KingdomCommand {
         }
     }
 
-    private static void notifyKingdom(Kingdom kingdom, String message) {
+    public static void notifyKingdom(Kingdom kingdom, String message) {
         MinecraftServer server = KingdomManager.getServer();
         if (server != null) {
             kingdom.getMembers().keySet().forEach(id -> {
@@ -283,13 +304,6 @@ public class KingdomCommand {
                 }
             });
         }
-    }
-
-    private static ServerPlayerEntity getServerPlayer(UUID playerId) {
-        // This is a helper method to get a player from any available server reference
-        // We'll need to find a way to get the server instance
-        // For now, let's modify this to work with the existing code
-        return null; // This will be implemented based on available context
     }
 
     // ==================== DIPLOMACY SUGGESTIONS ====================
@@ -306,7 +320,7 @@ public class KingdomCommand {
                         .forEach(k -> builder.suggest(k.getName()));
             }
         }
-        return builder;
+        return builder; // RETURN BUILDER DIRECTLY, NO .buildFuture()
     }
 
     private static com.mojang.brigadier.suggestion.SuggestionsBuilder suggestAllies(
@@ -355,16 +369,6 @@ public class KingdomCommand {
         } catch (NumberFormatException e) {
             return -1; // Invalid format
         }
-    }
-
-    private static String getCurrencySuffix(String input) {
-        if (input == null || input.isEmpty()) return "b";
-
-        input = input.toLowerCase().trim();
-        if (input.endsWith("g")) return "g";
-        if (input.endsWith("s")) return "s";
-        if (input.endsWith("b")) return "b";
-        return "b"; // Default to bronze
     }
 
     // ==================== TREASURY COMMANDS ====================
